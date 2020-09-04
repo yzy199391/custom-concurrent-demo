@@ -17,8 +17,6 @@ import java.util.Random;
 @Data
 public class AlarmAgent {
 
-    public static final Logger log = (Logger) LoggerFactory.getLogger(AlarmAgent.class);
-
     /**
      * 单例
      */
@@ -32,11 +30,14 @@ public class AlarmAgent {
      */
     private CustomHeartBeatThread heartBeatThread = new CustomHeartBeatThread();
 
-    public static AlarmAgent getInstance() {
+    private AlarmAgent(){
+    }
+
+    static AlarmAgent getInstance() {
         return INSTANCE;
     }
 
-    public void init() {
+    void init() {
         connectToServer();
         heartBeatThread.setDaemon(true);
         heartBeatThread.start();
@@ -62,27 +63,28 @@ public class AlarmAgent {
         }
     }
 
-    public void sentAlarmMessage(String message) throws InterruptedException {
+    void sentAlarmMessage(String message) throws InterruptedException {
         synchronized (this) {
             while (!isConnectedService) {
+                System.out.println(String.format("服务器链接断开，线程 %s 进入等待状态", Thread.currentThread().getName()));
                 this.wait();
             }
         }
         //真实操作
-        System.out.println("发送报警信息成功");
+        System.out.println(String.format(Thread.currentThread().getName() + "发送报警信息: %s 成功", message));
     }
 
     public class CustomHeartBeatThread extends Thread {
         @Override
         public void run() {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
                 while (true) {
                     if (checkConnection()) {
                         isConnectedService = true;
                     } else {
                         isConnectedService = false;
-                        log.info("链接断开");
+                        //System.out.println(Thread.currentThread().getId() + "  链接断开");
                         connectToServer();
                     }
                 }
@@ -94,8 +96,6 @@ public class AlarmAgent {
 
     /**
      * 模拟网络不稳定状态
-     *
-     * @return
      */
     private boolean checkConnection() {
         final Random random = new Random();
